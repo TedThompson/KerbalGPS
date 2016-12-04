@@ -98,6 +98,7 @@ public class KerbalGPS : PartModule
     private int  giWindowID;
     private int  giLastVesselCount = 0;
     private int  giTransmitterID = FIGARO_TRANSMITTER_PART_NAME.GetHashCode();
+    private bool displayGUI;
 
     private System.String gsLat;
     private System.String gsLon;
@@ -138,8 +139,7 @@ public class KerbalGPS : PartModule
     private const string FIGARO_TRANSMITTER_PART_NAME = "FigaroTransmitter";
 
     private const string NULL_ACRONYM = "NONE";
-    private bool displayGUI;
-
+    
 
     /////////////////////////////////////////////////////////////////////////////////////////////
     //
