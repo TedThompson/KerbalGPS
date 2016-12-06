@@ -1,25 +1,12 @@
 ﻿/////////////////////////////////////////////////////////////////////////////////////////////
 ////
-////   KerbalGPS_Main.cs
+////   AppLauncher.cs
 ////
-////   Kerbal Space Program GPS math library
+////   Kerbal Space Program AppLauncher routines
 ////
-////   (C) Copyright 2012-2013, Kevin Wilder (a.k.a. PakledHostage)
+////   (C) Copyright 2016 Ted Thompson
 ////
-////   This code is licensed under the Attribution-NonCommercial-ShareAlike 3.0 (CC BY-NC-SA 3.0) 
-////   creative commons license. See <http://creativecommons.org/licenses/by-nc-sa/3.0/legalcode> 
-////   for full details.
-////
-////   Attribution — You are free to modify this code, so long as you mention that the resulting
-////                 work is based upon or adapted from this library. This KerbalGPS_Main.cs
-////                 code library is the original work of Kevin Wilder.
-////
-////   Non-commercial - You may not use this work for commercial purposes.
-////
-////   Share Alike — If you alter, transform, or build upon this work, you may distribute the 
-////                 resulting work only under the same or similar license to the CC BY-NC-SA 3.0
-////                 license.
-////
+////   This code is licensed under GPL-3.0
 ////
 /////////////////////////////////////////////////////////////////////////////////////////////
 ////
@@ -27,16 +14,11 @@
 ////
 /////////////////////////////////////////////////////////////////////////////////////////////
 ////
-////   Created November 10th, 2012
-////
-////   Revised October 26, 2013 by Kevin Wilder to incorporate changes suggested by m4v.
-////
-////   Revised December 1, 2016 by Ted Thompson to incorporate remove obsolete RenderManager refs
+////   Created December 5th, 2016
 ////
 ////
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-using UnityEngine;
 using KSP.UI.Screens;
 
 /// <summary>
