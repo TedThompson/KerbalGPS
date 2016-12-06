@@ -46,6 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AppLauncher.cs" />
     <Compile Include="KerbalGPS_Main.cs" />
     <Compile Include="KerbalGPS_Math.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
