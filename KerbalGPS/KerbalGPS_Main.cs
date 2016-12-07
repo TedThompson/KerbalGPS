@@ -296,6 +296,15 @@ namespace KerbStar
                 }
             }
 
+            if (!this.vessel.isActiveVessel)
+            {
+                GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NONE);
+            }
+            else
+            {
+                // GPSToolbar.AppLauncherKerbalGPS.Start();
+            }
+            
             base.OnUpdate();
         }
 
@@ -644,12 +653,12 @@ namespace KerbStar
 
             }
         }
-
+        
         public void Start()
         {
             GPSToolbar.AppLauncherKerbalGPS.Start();
         }
-
+        
         public void OnDestroy()
         {
             GPSToolbar.AppLauncherKerbalGPS.OnDestroy();
