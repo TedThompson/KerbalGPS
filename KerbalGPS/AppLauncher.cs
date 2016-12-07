@@ -20,27 +20,25 @@
 /////////////////////////////////////////////////////////////////////////////////////////////
 
 using KSP.UI.Screens;
-
-/// <summary>
-/// Add a MOD(3rd party) application to the Application Launcher. Use ApplicationLauncherButton.VisibleInScenes to set where the button should be displayed.
-/// </summary>
-/// <param name="onTrue">Callback for when the button is toggeled on</param>
-/// <param name="onFalse">Callback for when the button is toggeled off</param>
-/// <param name="onHover">Callback for when the mouse is hovering over the button</param>
-/// <param name="onHoverOut">Callback for when the mouse hoveris off the button</param>
-/// <param name="onEnable">Callback for when the button is shown or enabled by the application launcher</param>
-/// <param name="onDisable">Callback for when the button is hidden or disabled by the application launcher</param>
-/// <param name="visibleInScenes">The "scenes" this button will be visible in. For example VisibleInScenes = ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW;</param>
-/// <param name="texture">The 38x38 Texture to use for the button icon.</param>
-/// <returns></returns>
-/// public ApplicationLauncherButton AddModApplication(RUIToggleButton.OnTrue onTrue, RUIToggleButton.OnFalse onFalse, RUIToggleButton.OnHover onHover, RUIToggleButton.OnHoverOut onHoverOut, RUIToggleButton.OnEnable onEnable, RUIToggleButton.OnDisable onDisable, ApplicationLauncher.AppScenes visibleInScenes, Texture texture)
-/// 
+using UnityEngine;
 
 namespace KerbStar.GPSToolbar
 {
     public static class AppLauncherKerbalGPS
     {
         private static ApplicationLauncherButton btnLauncher;
+        private static Texture2D kgps_button_off;
+        private static Texture2D kgps_button_on_nosat;
+        private static Texture2D kgps_button_on_sat;
+        private static Texture2D kgps_button_Texture;
+        private static Texture2D tex2d;
+
+        public enum rcvrStatus
+        {
+            OFF = 0,
+            SATS = 1,
+            NOSATS = 2
+        }
 
         public static void Awake()
         {
@@ -48,11 +46,17 @@ namespace KerbStar.GPSToolbar
 
         public static void Start()
         {
+            if (!kgps_button_off && GameDatabase.Instance.ExistsTexture("KerbalGPS/Icon/GPSIconOff")) kgps_button_off = GameDatabase.Instance.GetTexture("KerbalGPS/Icon/GPSIconOff", false);
+            if (!kgps_button_on_sat && GameDatabase.Instance.ExistsTexture("KerbalGPS/Icon/GPSIconSat")) kgps_button_on_sat = GameDatabase.Instance.GetTexture("KerbalGPS/Icon/GPSIconSat", false);
+            if (!kgps_button_on_nosat && GameDatabase.Instance.ExistsTexture("KerbalGPS/Icon/GPSIconNoSat")) kgps_button_on_nosat = GameDatabase.Instance.GetTexture("KerbalGPS/Icon/GPSIconNoSat", false);
+
             if (btnLauncher == null)
-                btnLauncher =
-                    ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse, null, null, null, null,
-                                        ApplicationLauncher.AppScenes.FLIGHT,
-                                        GameDatabase.Instance.GetTexture("KerbalGPS/Icon/AppLauncherIcon", false));
+                btnLauncher = ApplicationLauncher.Instance.AddModApplication(OnToggleTrue, OnToggleFalse,
+                                                                             null, null,
+                                                                             null, null,
+                                                                             ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
+                                                                             kgps_button_off);
+            tex2d = kgps_button_off;
         }
 
         private static void OnToggleTrue()
@@ -71,6 +75,32 @@ namespace KerbStar.GPSToolbar
                 btnLauncher.SetTrue(click);
             else
                 btnLauncher.SetFalse(click);
+        }
+
+        public static void SetAppLauncherButtonTexture(rcvrStatus status)
+        {
+            switch (status)
+            {
+                case rcvrStatus.OFF:
+                    tex2d = kgps_button_off;
+                    break;
+                case rcvrStatus.SATS:
+                    tex2d = kgps_button_on_sat;
+                    break;
+                case rcvrStatus.NOSATS:
+                    tex2d = kgps_button_on_nosat;
+                    break;
+            }
+
+            // Set new launcherButton texture
+            if (btnLauncher != null)
+            {
+                if (tex2d != kgps_button_Texture)
+                {
+                    kgps_button_Texture = tex2d;
+                    btnLauncher.SetTexture(tex2d);
+                }
+            }
         }
 
         public static void OnDestroy()

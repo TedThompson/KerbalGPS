@@ -244,6 +244,8 @@ namespace KerbStar
 
                         if (clsGPSMath.Calculate_GPS_Position(out gfPosition, out guNumSats, out gfPositionErrorEstimate, out gfFilteredAltitude))
                         {
+                            // Sats found, set icon
+                            GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.SATS);
                             // Use the built-in GetLatitude and GetLongitude functions to compute the latitude and longitude
                             gfOrigLat = (float)vessel.mainBody.GetLatitude(gfPosition);
                             gfOrigLon = (float)vessel.mainBody.GetLongitude(gfPosition);
@@ -267,6 +269,9 @@ namespace KerbStar
                         }
                         else
                         {
+                            // Sats not found, set icon
+                            GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NOSATS);
+
                             gsTime = clsGPSMath.Time_to_String(Planetarium.GetUniversalTime(), (EarthTime == "TRUE"));
                             gsLat = "N/A";
                             gsLon = "N/A";
@@ -279,6 +284,10 @@ namespace KerbStar
                         }
 
                         gfDeltaTime = 0.0f;
+                    }
+                    else
+                    {
+                        GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.OFF);
                     }
                 }
                 else
