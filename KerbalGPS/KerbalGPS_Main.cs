@@ -74,9 +74,9 @@ namespace KerbStar
 
         public List<string> GNSSSatelliteNames = new List<string>();
         public List<Guid> GNSSSatelliteIDs = new List<Guid>();
-        public static bool displayGUI;
+        //public bool displayGUI;
 
-
+  
         /////////////////////////////////////////////////////////////////////////////////////////////
         //
         //    Private Variables
@@ -101,6 +101,7 @@ namespace KerbStar
         private int giWindowID;
         private int giLastVesselCount = 0;
         private int giTransmitterID = FIGARO_TRANSMITTER_PART_NAME.GetHashCode();
+        // private int gpsMaster;
 
         private System.String gsLat;
         private System.String gsLon;
@@ -119,6 +120,8 @@ namespace KerbStar
         private NumberStyles varStyle = NumberStyles.Any;
         private CultureInfo varCulture = CultureInfo.CreateSpecificCulture("en-US");
 
+        private static bool masterSet;
+        private bool amIMaster;
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         //
@@ -131,7 +134,7 @@ namespace KerbStar
         private const string strSubVersion = "00";
 
         private const float MIN_CALCULATION_INTERVAL = 0.25f; // 4 Hz GPS
-        private const float GPS_GUI_WIDTH = 150.0f;
+        private const float GPS_GUI_WIDTH = 300.0f;
         private const float GPS_GUI_HEIGHT = 152.0f;
 
         private const uint MODE_GPS_POSITION = 0;
@@ -226,85 +229,109 @@ namespace KerbStar
 
         public override void OnUpdate()
         {
-            gfDeltaTime += TimeWarp.deltaTime;
+            checkMaster();
 
-            if ((this.vessel.rootPart.isControllable) && (this.vessel.isActiveVessel) && (gfDeltaTime > MIN_CALCULATION_INTERVAL))
+            if (amIMaster)
             {
-                if (gyKerbalGPSInitialised)
+                gfDeltaTime += TimeWarp.deltaTime;
+
+                if ((this.vessel.rootPart.isControllable) && (this.vessel.isActiveVessel) && (gfDeltaTime > MIN_CALCULATION_INTERVAL))
                 {
-                    if (gyReceiverOn)
+                    if (gyKerbalGPSInitialised)
                     {
-                        // Search for new GNSS satellites every 30 seconds, and then only if the number of vessels has changed:
-                        TimeSpan varCheckInterval = DateTime.Now - gLastSVCheckTime;
-                        if (varCheckInterval.Seconds > 30)
+                        if (gyReceiverOn)
                         {
-                            Find_GNSS_Satellites();
-                            gLastSVCheckTime = DateTime.Now;
-                        }
-
-                        if (clsGPSMath.Calculate_GPS_Position(out gfPosition, out guNumSats, out gfPositionErrorEstimate, out gfFilteredAltitude))
-                        {
-                            // Sats found, set icon
-                            GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.SATS);
-                            // Use the built-in GetLatitude and GetLongitude functions to compute the latitude and longitude
-                            gfOrigLat = (float)vessel.mainBody.GetLatitude(gfPosition);
-                            gfOrigLon = (float)vessel.mainBody.GetLongitude(gfPosition);
-
-                            gsLat = clsGPSMath.Lat_to_String(gfOrigLat);
-                            gsLon = clsGPSMath.Lon_to_String(gfOrigLon);
-
-                            gsPosition = gsLat + " " + gsLon;
-                            gsAltitude = Math.Round(gfFilteredAltitude, 1).ToString("#0.0") + " m";
-                            gsAccuracy = Math.Round(gfPositionErrorEstimate, 1).ToString("#0.0") + " m";
-
-                            if (gbDisplayMode == MODE_GPS_POSITION)
+                            // Search for new GNSS satellites every 30 seconds, and then only if the number of vessels has changed:
+                            TimeSpan varCheckInterval = DateTime.Now - gLastSVCheckTime;
+                            if (varCheckInterval.Seconds > 30)
                             {
+                                Find_GNSS_Satellites();
+                                gLastSVCheckTime = DateTime.Now;
+                            }
+
+                            if (clsGPSMath.Calculate_GPS_Position(out gfPosition, out guNumSats, out gfPositionErrorEstimate, out gfFilteredAltitude))
+                            {
+                                // Sats found, set icon
+                                //GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.SATS);
+                                // Use the built-in GetLatitude and GetLongitude functions to compute the latitude and longitude
+                                gfOrigLat = (float)vessel.mainBody.GetLatitude(gfPosition);
+                                gfOrigLon = (float)vessel.mainBody.GetLongitude(gfPosition);
+
+                                gsLat = clsGPSMath.Lat_to_String(gfOrigLat);
+                                gsLon = clsGPSMath.Lon_to_String(gfOrigLon);
+
+                                gsPosition = gsLat + " " + gsLon;
+                                gsAltitude = Math.Round(gfFilteredAltitude, 1).ToString("#0.0") + " m";
+                                gsAccuracy = Math.Round(gfPositionErrorEstimate, 1).ToString("#0.0") + " m";
+
+                                if (gbDisplayMode == MODE_GPS_POSITION)
+                                {
+                                    gsTime = clsGPSMath.Time_to_String(Planetarium.GetUniversalTime(), (EarthTime == "TRUE"));
+                                }
+                                else if (gbDisplayMode == MODE_GPS_DESTINATION)
+                                {
+                                    gsDistance = clsGPSMath.Great_Circle_Distance(gfOrigLat, gfOrigLon, gfDestLat, gfDestLon, gfFilteredAltitude);
+                                    gsHeading = clsGPSMath.Great_Circle_Heading(gfOrigLat, gfOrigLon, gfDestLat, gfDestLon);
+                                }
+                            }
+                            else
+                            {
+                                // Sats not found, set icon
+                                //GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NOSATS);
+
                                 gsTime = clsGPSMath.Time_to_String(Planetarium.GetUniversalTime(), (EarthTime == "TRUE"));
+                                gsLat = "N/A";
+                                gsLon = "N/A";
+                                gsAltitude = "N/A";
+                                gsAccuracy = "N/A";
+                                gsHeading = "N/A";
+                                gsDistance = "N/A";
+                                gsPosition = gsLat;
+                                gsAccuracy = "N/A";
                             }
-                            else if (gbDisplayMode == MODE_GPS_DESTINATION)
-                            {
-                                gsDistance = clsGPSMath.Great_Circle_Distance(gfOrigLat, gfOrigLon, gfDestLat, gfDestLon, gfFilteredAltitude);
-                                gsHeading = clsGPSMath.Great_Circle_Heading(gfOrigLat, gfOrigLon, gfDestLat, gfDestLon);
-                            }
+
+                            gfDeltaTime = 0.0f;
                         }
-                        else
+
+                        if (amIMaster)
                         {
-                            // Sats not found, set icon
-                            GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NOSATS);
-
-                            gsTime = clsGPSMath.Time_to_String(Planetarium.GetUniversalTime(), (EarthTime == "TRUE"));
-                            gsLat = "N/A";
-                            gsLon = "N/A";
-                            gsAltitude = "N/A";
-                            gsAccuracy = "N/A";
-                            gsHeading = "N/A";
-                            gsDistance = "N/A";
-                            gsPosition = gsLat;
-                            gsAccuracy = "N/A";
+                            if (gyReceiverOn)
+                            {
+                                if (guNumSats >= 4)
+                                {
+                                    GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.SATS);
+                                }
+                                else
+                                {
+                                    GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NOSATS);
+                                }
+                            }
+                            else
+                            {
+                                GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.OFF);
+                            }
                         }
-
-                        gfDeltaTime = 0.0f;
+                        else print("[KERBALGPS] no master");
+                        //else
+                        //{
+                        //    GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.OFF);
+                        //}
                     }
                     else
                     {
-                        GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.OFF);
+                        Initialise_KerbalGPS();
                     }
                 }
-                else
-                {
-                    Initialise_KerbalGPS();
-                }
-            }
 
-            if (!this.vessel.isActiveVessel)
-            {
-                GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NONE);
+                //if (!this.vessel.isActiveVessel)
+                //{
+                //    GPSToolbar.AppLauncherKerbalGPS.SetAppLauncherButtonTexture(GPSToolbar.AppLauncherKerbalGPS.rcvrStatus.NONE);
+                //}
+                //else
+                //{
+                //    // GPSToolbar.AppLauncherKerbalGPS.Start();
+                //}
             }
-            else
-            {
-                // GPSToolbar.AppLauncherKerbalGPS.Start();
-            }
-            
             base.OnUpdate();
         }
 
@@ -371,7 +398,7 @@ namespace KerbStar
 
         private void OnGUI()
         {
-            if (displayGUI)
+            if (amIMaster && GPSToolbar.AppLauncherKerbalGPS.displayGUI )
             {
                 drawGUI();
             }
@@ -563,16 +590,17 @@ namespace KerbStar
                 else
                 {
                     //RenderingManager.RemoveFromPostDrawQueue(3, new Callback(drawGUI)); //close the GUI if part has been deleted
-                    displayGUI = false;
-                    GPSToolbar.AppLauncherKerbalGPS.setBtnState(false);
+                    //displayGUI = false;
+                    //GPSToolbar.AppLauncherKerbalGPS.setBtnState(false);
                 }
             }
             catch
             {
                 //RenderingManager.RemoveFromPostDrawQueue(3, new Callback(drawGUI)); //close the GUI if part has been deleted
-                displayGUI = false;
-                GPSToolbar.AppLauncherKerbalGPS.setBtnState(false);
+                //displayGUI = false;
+                //GPSToolbar.AppLauncherKerbalGPS.setBtnState(false);
             }
+
         }
 
 
@@ -634,8 +662,8 @@ namespace KerbStar
         {
             if (!gyKerbalGPSInitialised)
             {
-                print("[Kerbal GPS Module] Loaded Version " + strVersion + "." + strKSPVersion + "." + strSubVersion);
-                print("[Kerbal GPS Module] Reference GNSS Acronym: " + GNSSacronym);
+                print("[KerbalGPS] Loaded Version " + strVersion + "." + strKSPVersion + "." + strSubVersion);
+                print("[KerbalGPS] Reference GNSS Acronym: " + GNSSacronym);
 
                 gyKerbalGPSInitialised = true;
                 giLastVesselCount = 0;
@@ -656,12 +684,12 @@ namespace KerbStar
         
         public void Start()
         {
-            GPSToolbar.AppLauncherKerbalGPS.Start();
+             GPSToolbar.AppLauncherKerbalGPS.Start();
         }
         
         public void OnDestroy()
         {
-            GPSToolbar.AppLauncherKerbalGPS.OnDestroy();
+            CleanUp();
         }
 
 
@@ -743,6 +771,60 @@ namespace KerbStar
             }
 
             return fReturn;
+        }
+
+        // attempt to eliminate cross code conflicts
+
+        public void CleanUp()
+        {
+        }
+
+        private void checkMaster()
+        {
+            KerbalGPS module;
+
+            if (amIMaster && (!vessel.isActiveVessel || !gyReceiverOn))
+            {
+                masterSet = false;
+                amIMaster = false;
+            }
+
+            foreach (Part part in vessel.parts)
+            {
+                module = part.Modules.GetModule<KerbalGPS>();
+                if (module != null)
+                {
+                    if (module.amIMaster == true)
+                    {
+                        masterSet = true;
+                        break;
+                    }
+                }
+                masterSet = false;
+            }
+
+            if (vessel.isActiveVessel && !masterSet)
+            {
+                foreach (Part part in vessel.parts)
+                {
+                    module = part.Modules.GetModule<KerbalGPS>();
+                    if (module != null)
+                    {
+                        if (module == this && gyReceiverOn)
+                        {
+                            masterSet = true;
+                            amIMaster = true;
+                            return;
+                        }
+                        if (module == this && !gyReceiverOn)
+                        {
+                            masterSet = false;
+                            amIMaster = false;
+                            return;
+                        }
+                    }
+                }
+            }
         }
 
     }
